@@ -2,29 +2,36 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Lib (
-  start,
-  Env(..),
-  Bot(..),
-  sendAPIMethod
-) where
+module Lib
+  ( startTG,
+    startVK,
+    Env (..),
+    Bot (..),
+    sendAPIMethod,
+  )
+where
 
 import qualified Control.Exception as E
 import qualified Control.Monad.Catch as MCatch
-import  Control.Monad.Reader (MonadIO (..), MonadReader (ask), ReaderT (runReaderT))
-import Data.ByteString.Lazy ( ByteString )
-import  Data.Typeable (Typeable)
+import Control.Monad.Reader (MonadIO (..), MonadReader (ask), ReaderT (runReaderT))
+import Data.ByteString.Lazy (ByteString)
+import Data.Typeable (Typeable)
 import qualified Network.HTTP.Base as HBase
 import qualified Network.HTTP.Client as HClient
 import qualified Network.HTTP.Client.TLS as TLS
 import qualified Network.HTTP.Types.Status as HStatus
 import Text.Printf (printf)
 
-
-start = do
+startTG = do
   manager <- HClient.newManager TLS.tlsManagerSettings
   let env = Env (TelegramBot "token") putStrLn manager
   res <- runReaderT (sendAPIMethod "getMe" []) env
+  print res
+
+startVK = do
+  manager <- HClient.newManager TLS.tlsManagerSettings
+  let env = Env (VKBot "token" "5.131") putStrLn manager
+  res <- runReaderT (sendAPIMethod "groups.getById" []) env
   print res
 
 data Env = Env
@@ -99,7 +106,9 @@ createRequest method params = do
   let bot = getBot env
   let url = case bot of
         TelegramBot {botToken = token} -> printf "https://api.telegram.org/bot%s/%s?%s" token method (HBase.urlEncodeVars params)
-        VKBot {} -> error "TODO"
+        VKBot {botToken = token, botVersion = version} ->
+          let addParams = params ++ [("access_token", token), ("v", version)]
+           in printf "https://api.vk.com/method/%s?%s" method (HBase.urlEncodeVars addParams)
   HClient.parseRequest url
 
 sendRequest ::
