@@ -1,0 +1,81 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           bot
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/wmean/bot#readme>
+homepage:       https://github.com/wmean/bot#readme
+bug-reports:    https://github.com/wmean/bot/issues
+author:         Evgeniy Rybin
+maintainer:     z.ribin20@gmail.com
+copyright:      2022 Evgeniy Rybin
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/wmean/bot
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_bot
+  hs-source-dirs:
+      src
+  build-depends:
+      HTTP
+    , base >=4.7 && <5
+    , bytestring
+    , exceptions
+    , http-client
+    , http-client-tls
+    , http-types
+    , mtl
+  default-language: Haskell2010
+
+executable bot-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_bot
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HTTP
+    , base >=4.7 && <5
+    , bot
+    , bytestring
+    , exceptions
+    , http-client
+    , http-client-tls
+    , http-types
+    , mtl
+  default-language: Haskell2010
+
+test-suite bot-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_bot
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HTTP
+    , base >=4.7 && <5
+    , bot
+    , bytestring
+    , exceptions
+    , http-client
+    , http-client-tls
+    , http-types
+    , mtl
+  default-language: Haskell2010
