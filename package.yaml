@@ -28,6 +28,8 @@ dependencies:
 - mtl
 - exceptions
 - bytestring
+- aeson
+- vector
 
 library:
   source-dirs: src
