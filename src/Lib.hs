@@ -127,13 +127,23 @@ createRequest method params = do
   HClient.parseRequest url
 
 sendRequest ::
-  (MonadReader a m, MonadIO m, HasManager a) =>
+  (MonadReader env m, MonadIO m, HasLog env, HasManager env) =>
   HClient.Request ->
-  m (HClient.Response ByteString)
+  m ByteString
 sendRequest req = do
   env <- ask
   let manager = getManager env
-  liftIO (HClient.httpLbs req manager)
+  let url = show $ HClient.host req <> HClient.path req <> HClient.queryString req
+  logMessage Debug $ "Send request to " ++ url
+  res <- liftIO (HClient.httpLbs req manager)
+  let status = HClient.responseStatus res
+  case HStatus.statusCode status of
+    200 -> do
+      logMessage Debug "Status 200"
+      return $ HClient.responseBody res
+    code -> do
+      logMessage Error $ printf "Status %d %s" code (show $ HStatus.statusMessage status)
+      E.throw APIException
 
 sendAPIMethod ::
   ( MonadReader env m,
@@ -147,18 +157,11 @@ sendAPIMethod ::
   [(String, String)] ->
   m ByteString
 sendAPIMethod method params = do
+  logMessage Info $ printf "Send method %s with params %s" method (show params)
   req <- createRequest method params
-  let url = show $ HClient.host req <> HClient.path req <> HClient.queryString req
-  logMessage Debug $ "send request to " ++ url
   res <- sendRequest req
-  let status = HClient.responseStatus res
-  case HStatus.statusCode status of
-    200 -> do
-      logMessage Debug "Status 200"
-      return $ HClient.responseBody res
-    code -> do
-      logMessage Error $ printf "Status %d %s" code (show $ HStatus.statusMessage status)
-      E.throw APIException
+  logMessage Info $ printf "Got %s" (show res)
+  return res
 
 initLongpoll ::
   ( MonadReader env m,
@@ -170,6 +173,7 @@ initLongpoll ::
   ) =>
   m (TGTypes.Updates, LongPoll)
 initLongpoll = do
+  logMessage Info "Trying to init longpoll"
   env <- ask
   case getBot env of
     bot@TelegramBot {} -> do
@@ -179,7 +183,8 @@ initLongpoll = do
         Just udts ->
           if TGTypes.usOk udts
             then do
-              let newUpdateID = TGTypes.uID . last . TGTypes.usUpdates $ udts
+              let lst = TGTypes.usUpdates udts
+              let newUpdateID = if null lst then 0 else TGTypes.uID . last $ lst
               return (udts, TelegramLongpoll {lpLastUpdateID = newUpdateID})
             else undefined
         Nothing -> undefined
@@ -196,6 +201,7 @@ awaitLongpoll ::
   LongPoll ->
   m (TGTypes.Updates, LongPoll)
 awaitLongpoll longpoll@TelegramLongpoll {lpLastUpdateID = updateID} = do
+  logMessage Info "Await updates"
   resp <- sendAPIMethod "getUpdates" [("timeout", "25"), ("offset", show $ updateID + 1)]
   logMessage Debug $ show resp
   let updates = A.decode resp :: Maybe TGTypes.Updates
