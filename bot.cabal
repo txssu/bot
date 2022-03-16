@@ -27,6 +27,7 @@ library
   exposed-modules:
       Lib
       TelegramTypes
+      VKTypes
   other-modules:
       Paths_bot
   hs-source-dirs:
