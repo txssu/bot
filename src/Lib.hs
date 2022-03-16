@@ -171,7 +171,7 @@ initLongpoll ::
     HasLog env,
     HasManager env
   ) =>
-  m (TGTypes.Updates, LongPoll)
+  m LongPoll
 initLongpoll = do
   logMessage Info "Trying to init longpoll"
   env <- ask
@@ -185,7 +185,7 @@ initLongpoll = do
             then do
               let lst = TGTypes.usUpdates udts
               let newUpdateID = if null lst then 0 else TGTypes.uID . last $ lst
-              return (udts, TelegramLongpoll {lpLastUpdateID = newUpdateID})
+              return TelegramLongpoll {lpLastUpdateID = newUpdateID}
             else undefined
         Nothing -> undefined
     bot@VKBot {} -> undefined
@@ -209,7 +209,8 @@ awaitLongpoll longpoll@TelegramLongpoll {lpLastUpdateID = updateID} = do
     Just udts ->
       if TGTypes.usOk udts
         then do
-          let newUpdateID = TGTypes.uID . last . TGTypes.usUpdates $ udts
+          let lst = TGTypes.usUpdates udts
+          let newUpdateID = if null lst then 0 else TGTypes.uID . last $ lst
           return (udts, longpoll {lpLastUpdateID = newUpdateID})
         else undefined
     Nothing -> undefined
@@ -223,10 +224,24 @@ handleLongpoll ::
     HasLog env,
     HasManager env
   ) =>
-  LongPoll ->
   (TGTypes.Updates -> m ()) ->
   m ()
-handleLongpoll longpoll handler = do
+handleLongpoll handler = do
+  lp <- initLongpoll
+  handleLongpoll' handler lp
+
+handleLongpoll' ::
+  ( MonadReader env m,
+    MonadIO m,
+    MCatch.MonadThrow m,
+    HasBot env,
+    HasLog env,
+    HasManager env
+  ) =>
+  (TGTypes.Updates -> m ()) ->
+  LongPoll ->
+  m ()
+handleLongpoll' handler longpoll = do
   (updates, lp) <- awaitLongpoll longpoll
   handler updates
-  handleLongpoll lp handler
+  handleLongpoll' handler lp

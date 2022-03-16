@@ -25,12 +25,13 @@ instance FromJSON Update where
   parseJSON _ = empty
 
 data Message = Message
-  { mFrom :: User
+  { mFrom :: User,
+    mText :: String
   }
   deriving (Show)
 
 instance FromJSON Message where
-  parseJSON (Object message) = Message <$> message .: "from"
+  parseJSON (Object message) = Message <$> message .: "from" <*> message .: "text"
   parseJSON _ = empty
 
 data User = User
