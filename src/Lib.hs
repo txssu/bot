@@ -26,9 +26,9 @@ import qualified Network.HTTP.Base as HBase
 import qualified Network.HTTP.Client as HClient
 import qualified Network.HTTP.Client.TLS as TLS
 import qualified Network.HTTP.Types.Status as HStatus
-import qualified TelegramTypes as TGTypes
+import qualified Telegram.Types as TGTypes
 import Text.Printf (printf)
-import qualified VKTypes
+import qualified VK.Types
 
 startTG = do
   manager <- HClient.newManager TLS.tlsManagerSettings
@@ -104,7 +104,7 @@ data Bot
 
 data LongPoll
   = VKLongpoll
-      { lpServer :: VKTypes.LongPollServer
+      { lpServer :: VK.Types.LongPollServer
       }
   | TelegramLongpoll
       { lpLastUpdateID :: Integer
@@ -196,20 +196,20 @@ initLongpoll = do
     bot@VKBot {} -> do
       -- Get VK group id
       resp <- sendAPIMethod "groups.getById" []
-      let response = A.decode resp :: Maybe (VKTypes.Response [VKTypes.Group])
+      let response = A.decode resp :: Maybe (VK.Types.Response [VK.Types.Group])
       when (isNothing response) (E.throw APIException)
       let Just groups = response
-      let myID = VKTypes.gID . head . VKTypes.rResponse $ groups
+      let myID = VK.Types.gID . head . VK.Types.rResponse $ groups
       -- Get Longpoll data
       resp <- sendAPIMethod "groups.getLongPollServer" [("group_id", show myID)]
-      let response = A.decode resp :: Maybe (VKTypes.Response VKTypes.LongPollServer)
+      let response = A.decode resp :: Maybe (VK.Types.Response VK.Types.LongPollServer)
       when (isNothing response) (E.throw APIException)
       let Just rServer = response
-      let server = VKTypes.rResponse rServer
+      let server = VK.Types.rResponse rServer
 
       return $ VKLongpoll server
 
-data Updates = TelegramUpdates [TGTypes.Update] | VKUpdates [VKTypes.Update]
+data Updates = TelegramUpdates [TGTypes.Update] | VKUpdates [VK.Types.Update]
 
 awaitLongpoll ::
   ( MonadReader env m,
@@ -237,15 +237,15 @@ awaitLongpoll longpoll@TelegramLongpoll {lpLastUpdateID = updateID} = do
     Nothing -> undefined
 awaitLongpoll VKLongpoll {lpServer = longpoll} = do
   logMessage Info "Await updates"
-  req <- HClient.parseRequest (VKTypes.lpURL longpoll)
+  req <- HClient.parseRequest (VK.Types.lpURL longpoll)
   resp <- sendRequest req
   logMessage Debug $ show resp
-  let mUpdates = A.decode resp :: Maybe VKTypes.Updates -- TODO: Check errors
+  let mUpdates = A.decode resp :: Maybe VK.Types.Updates -- TODO: Check errors
   when (isNothing mUpdates) (E.throw APIException)
   let Just updates = mUpdates
-  let newTS = VKTypes.usTS updates
-  let lst = VKTypes.usUpdates updates
-  let newLP = longpoll {VKTypes.lpTS = newTS}
+  let newTS = VK.Types.usTS updates
+  let lst = VK.Types.usUpdates updates
+  let newLP = longpoll {VK.Types.lpTS = newTS}
 
   return (VKUpdates lst, VKLongpoll {lpServer = newLP})
 

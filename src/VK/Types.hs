@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module VKTypes (Response (..), Group (..), LongPollServer (..), lpURL, Updates (..), Update (..)) where
+module VK.Types (Response (..), Group (..), LongPollServer (..), lpURL, Updates (..), Update (..)) where
 
 import Control.Applicative (Alternative (empty))
 import Data.Aeson (FromJSON (parseJSON), Value (Object), (.:))
