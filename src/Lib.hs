@@ -5,13 +5,11 @@
 module Lib
   ( startTG,
     startVK,
-    Env (..),
-    Bot (..),
     sendAPIMethod,
   )
 where
 
-import qualified Control.Exception as E
+import qualified Control.Exception as Ex
 import Control.Monad (when)
 import qualified Control.Monad.Catch as MCatch
 import Control.Monad.Reader (MonadIO (..), MonadReader (ask), ReaderT (runReaderT), guard)
@@ -22,6 +20,7 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Maybe (isNothing)
 import Data.Typeable (Typeable)
 import qualified Data.Vector as V
+import qualified Env as E
 import qualified Network.HTTP.Base as HBase
 import qualified Network.HTTP.Client as HClient
 import qualified Network.HTTP.Client.TLS as TLS
@@ -32,12 +31,12 @@ import qualified VK.Types
 
 startTG = do
   manager <- HClient.newManager TLS.tlsManagerSettings
-  let env = Env (TelegramBot "token") putStrLn manager
+  env <- E.env (E.TelegramBot "token")
   runReaderT (handleLongpoll testHandler) env
 
 startVK = do
   manager <- HClient.newManager TLS.tlsManagerSettings
-  let env = Env (VKBot "token" "5.131") putStrLn manager
+  env <- E.env (E.VKBot "token" "5.131")
   runReaderT (handleLongpoll testHandler) env
 
 testHandler (VKUpdates us) = do
@@ -45,99 +44,48 @@ testHandler (VKUpdates us) = do
 testHandler (TelegramUpdates us) = do
   mapM_ (logMessage Info . TGTypes.mText . TGTypes.uMessage) us
 
-data Env = Env
-  { envBot :: !Bot,
-    envLog :: !(String -> IO ()),
-    envHTTPManager :: HClient.Manager
-  }
-
-class HasLog a where
-  getLog :: a -> (String -> IO ())
-
-instance HasLog (String -> IO ()) where
-  getLog = id
-
-instance HasLog Env where
-  getLog = envLog
-
 data LogLevel = Error | Info | Debug
 
 logMessage ::
-  (MonadReader env m, HasLog env, MonadIO m) =>
+  (MonadReader env m, E.HasLog env, MonadIO m) =>
   LogLevel ->
   String ->
   m ()
 logMessage logLevel msg = do
   env <- ask
   liftIO $
-    getLog env $ case logLevel of
+    E.getLog env $ case logLevel of
       Error -> "Error: " ++ msg
       Info -> "Info:  " ++ msg
       Debug -> "Debug: " ++ msg
 
-class HasManager a where
-  getManager :: a -> HClient.Manager
-
-instance HasManager HClient.Manager where
-  getManager = id
-
-instance HasManager Env where
-  getManager = envHTTPManager
-
-class HasBot a where
-  getBot :: a -> Bot
-
-instance HasBot Bot where
-  getBot = id
-
-instance HasBot Env where
-  getBot = envBot
-
-data Bot
-  = VKBot
-      { botToken :: String,
-        botVersion :: String
-      }
-  | TelegramBot
-      { botToken :: String
-      }
-
-data LongPoll
-  = VKLongpoll
-      { lpServer :: VK.Types.LongPollServer
-      }
-  | TelegramLongpoll
-      { lpLastUpdateID :: Integer
-      }
-  deriving (Show)
-
 data APIException = APIException
   deriving (Show, Typeable)
 
-instance E.Exception APIException
+instance Ex.Exception APIException
 
 createRequest ::
-  (MonadReader a m, MCatch.MonadThrow m, HasBot a) =>
+  (MonadReader a m, MCatch.MonadThrow m, E.HasBot a) =>
   String ->
   [(String, String)] ->
   m HClient.Request
 createRequest method params = do
   env <- ask
-  let bot = getBot env
+  let bot = E.getBot env
   let url = case bot of
-        TelegramBot {botToken = token} -> printf "https://api.telegram.org/bot%s/%s?%s" token method (HBase.urlEncodeVars params)
-        VKBot {botToken = token, botVersion = version} ->
+        E.TelegramBot {E.botToken = token} -> printf "https://api.telegram.org/bot%s/%s?%s" token method (HBase.urlEncodeVars params)
+        E.VKBot {E.botToken = token, E.botVersion = version} ->
           let addParams = params ++ [("access_token", token), ("v", version)]
            in printf "https://api.vk.com/method/%s?%s" method (HBase.urlEncodeVars addParams)
   HClient.parseRequest url
 
 sendRequest ::
-  (MonadReader env m, MonadIO m, HasLog env, HasManager env) =>
+  (MonadReader env m, MonadIO m, E.HasLog env, E.HasManager env) =>
   HClient.Request ->
   m ByteString
 sendRequest req = do
   env <- ask
-  let manager = getManager env
+  let manager = E.getManager env
   let url = show $ HClient.host req <> HClient.path req <> HClient.queryString req
   logMessage Debug $ "Send request to " ++ url
   res <- liftIO (HClient.httpLbs req manager)
@@ -148,15 +96,15 @@ sendRequest req = do
       return $ HClient.responseBody res
     code -> do
       logMessage Error $ printf "Status %d %s" code (show $ HStatus.statusMessage status)
-      E.throw APIException
+      Ex.throw APIException
 
 sendAPIMethod ::
   ( MonadReader env m,
     MonadIO m,
     MCatch.MonadThrow m,
-    HasBot env,
-    HasLog env,
-    HasManager env
+    E.HasBot env,
+    E.HasLog env,
+    E.HasManager env
   ) =>
   String ->
   [(String, String)] ->
@@ -172,16 +120,16 @@ initLongpoll ::
   ( MonadReader env m,
     MonadIO m,
     MCatch.MonadThrow m,
-    HasBot env,
-    HasLog env,
-    HasManager env
+    E.HasBot env,
+    E.HasLog env,
+    E.HasManager env
   ) =>
-  m LongPoll
+  m E.LongPoll
 initLongpoll = do
   logMessage Info "Trying to init longpoll"
   env <- ask
-  case getBot env of
-    bot@TelegramBot {} -> do
+  case E.getBot env of
+    bot@E.TelegramBot {} -> do
       resp <- sendAPIMethod "getUpdates" []
       let updates = A.decode resp :: Maybe TGTypes.Updates
       case updates of
@@ -190,24 +138,24 @@ initLongpoll = do
             then do
               let lst = TGTypes.usUpdates udts
               let newUpdateID = if null lst then 0 else TGTypes.uID . last $ lst
-              return TelegramLongpoll {lpLastUpdateID = newUpdateID}
+              return E.TelegramLongpoll {E.lpLastUpdateID = newUpdateID}
             else undefined
         Nothing -> undefined
-    bot@VKBot {} -> do
+    bot@E.VKBot {} -> do
       -- Get VK group id
       resp <- sendAPIMethod "groups.getById" []
       let response = A.decode resp :: Maybe (VK.Types.Response [VK.Types.Group])
-      when (isNothing response) (E.throw APIException)
+      when (isNothing response) (Ex.throw APIException)
       let Just groups = response
       let myID = VK.Types.gID . head . VK.Types.rResponse $ groups
       -- Get Longpoll data
       resp <- sendAPIMethod "groups.getLongPollServer" [("group_id", show myID)]
       let response = A.decode resp :: Maybe (VK.Types.Response VK.Types.LongPollServer)
-      when (isNothing response) (E.throw APIException)
+      when (isNothing response) (Ex.throw APIException)
       let Just rServer = response
       let server = VK.Types.rResponse rServer
 
-      return $ VKLongpoll server
+      return $ E.VKLongpoll server
 
 data Updates = TelegramUpdates [TGTypes.Update] | VKUpdates [VK.Types.Update]
 
@@ -215,13 +163,13 @@ awaitLongpoll ::
   ( MonadReader env m,
     MonadIO m,
     MCatch.MonadThrow m,
-    HasBot env,
-    HasLog env,
-    HasManager env
+    E.HasBot env,
+    E.HasLog env,
+    E.HasManager env
   ) =>
-  LongPoll ->
-  m (Updates, LongPoll)
-awaitLongpoll longpoll@TelegramLongpoll {lpLastUpdateID = updateID} = do
+  E.LongPoll ->
+  m (Updates, E.LongPoll)
+awaitLongpoll longpoll@E.TelegramLongpoll {E.lpLastUpdateID = updateID} = do
   logMessage Info "Await updates"
   resp <- sendAPIMethod "getUpdates" [("timeout", "25"), ("offset", show $ updateID + 1)]
   logMessage Debug $ show resp
@@ -232,30 +180,30 @@ awaitLongpoll longpoll@TelegramLongpoll {lpLastUpdateID = updateID} = do
         then do
           let lst = TGTypes.usUpdates udts
           let newUpdateID = if null lst then 0 else TGTypes.uID . last $ lst
-          return (TelegramUpdates lst, longpoll {lpLastUpdateID = newUpdateID})
+          return (TelegramUpdates lst, longpoll {E.lpLastUpdateID = newUpdateID})
         else undefined
     Nothing -> undefined
-awaitLongpoll VKLongpoll {lpServer = longpoll} = do
+awaitLongpoll E.VKLongpoll {E.lpServer = longpoll} = do
   logMessage Info "Await updates"
   req <- HClient.parseRequest (VK.Types.lpURL longpoll)
   resp <- sendRequest req
   logMessage Debug $ show resp
   let mUpdates = A.decode resp :: Maybe VK.Types.Updates -- TODO: Check errors
-  when (isNothing mUpdates) (E.throw APIException)
+  when (isNothing mUpdates) (Ex.throw APIException)
   let Just updates = mUpdates
   let newTS = VK.Types.usTS updates
   let lst = VK.Types.usUpdates updates
   let newLP = longpoll {VK.Types.lpTS = newTS}
 
-  return (VKUpdates lst, VKLongpoll {lpServer = newLP})
+  return (VKUpdates lst, E.VKLongpoll {E.lpServer = newLP})
 
 handleLongpoll ::
   ( MonadReader env m,
     MonadIO m,
     MCatch.MonadThrow m,
-    HasBot env,
-    HasLog env,
-    HasManager env
+    E.HasBot env,
+    E.HasLog env,
+    E.HasManager env
   ) =>
   (Updates -> m ()) ->
   m ()
@@ -267,12 +215,12 @@ handleLongpoll' ::
   ( MonadReader env m,
     MonadIO m,
     MCatch.MonadThrow m,
-    HasBot env,
-    HasLog env,
-    HasManager env
+    E.HasBot env,
+    E.HasLog env,
+    E.HasManager env
   ) =>
   (Updates -> m ()) ->
-  LongPoll ->
+  E.LongPoll ->
   m ()
 handleLongpoll' handler longpoll = do
   (updates, lp) <- awaitLongpoll longpoll
