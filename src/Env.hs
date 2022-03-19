@@ -1,72 +1,58 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Env
   ( env,
     Env,
+    HasEnv,
     HasLog (..),
     HasManager (..),
-    HasBot (..),
-    Bot (..),
-    LongPoll (..),
+    HasAPI (..),
   )
 where
 
+import API (API, newRequestWithMethod)
+import Control.Monad.Catch (MonadThrow)
+import Control.Monad.Reader (MonadIO, MonadReader (ask), ReaderT)
+import qualified Data.ByteString.Lazy as L
 import qualified Network.HTTP.Client as HClient
 import qualified Network.HTTP.Client.TLS as TLS
-import qualified VK.Types
+import System.Environment (getEnv)
 
-env :: Bot -> IO Env
-env bot = do
+env :: t -> IO (Env t)
+env api = do
   manager <- HClient.newManager TLS.tlsManagerSettings
-  return $ Env bot putStrLn manager
+  return $ Env api putStrLn manager
 
-data Env = Env
-  { envBot :: !Bot,
+data Env t = Env
+  { envAPI :: t,
     envLog :: !(String -> IO ()),
     envHTTPManager :: HClient.Manager
   }
 
-class HasLog a where
-  getLog :: a -> (String -> IO ())
+type HasEnv e a = (HasLog (e a), HasManager (e a), HasAPI e)
+
+class HasLog e where
+  getLog :: e -> (String -> IO ())
 
 instance HasLog (String -> IO ()) where
   getLog = id
 
-instance HasLog Env where
+instance HasLog (Env a) where
   getLog = envLog
 
-class HasManager a where
-  getManager :: a -> HClient.Manager
+class HasManager e where
+  getManager :: e -> HClient.Manager
 
 instance HasManager HClient.Manager where
   getManager = id
 
-instance HasManager Env where
+instance HasManager (Env a) where
   getManager = envHTTPManager
 
-class HasBot a where
-  getBot :: a -> Bot
+class HasAPI e where
+  getAPI :: (API a) => e a -> a
 
-instance HasBot Bot where
-  getBot = id
-
-instance HasBot Env where
-  getBot = envBot
-
-data Bot
-  = VKBot
-      { botToken :: String,
-        botVersion :: String
-      }
-  | TelegramBot
-      { botToken :: String
-      }
-
-data LongPoll
-  = VKLongpoll
-      { lpServer :: VK.Types.LongPollServer
-      }
-  | TelegramLongpoll
-      { lpLastUpdateID :: Integer
-      }
-  deriving (Show)
+instance HasAPI Env where
+  getAPI = envAPI

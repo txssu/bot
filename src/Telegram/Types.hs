@@ -8,7 +8,8 @@ import Data.Aeson (FromJSON (parseJSON), Value (Object), (.:))
 data Updates = Updates
   { usOk :: Bool,
     usUpdates :: [Update]
-  } deriving (Show)
+  }
+  deriving (Show)
 
 instance FromJSON Updates where
   parseJSON (Object updates) = Updates <$> updates .: "ok" <*> updates .: "result"
