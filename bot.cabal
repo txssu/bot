@@ -28,7 +28,6 @@ library
       API
       Env
       Lib
-      Requests
       Telegram.API
       Telegram.Types
       VK.API

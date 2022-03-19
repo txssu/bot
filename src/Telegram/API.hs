@@ -1,15 +1,23 @@
-module Telegram.API where
+module Telegram.API (api) where
 
-import API (API, APIException, newRequestWithMethod)
+import API (API, APIException, HasManager (getManager), newRequestWithMethod)
 import Control.Monad.Catch (MonadThrow (throwM))
 import qualified Data.Aeson as A
 import Network.HTTP.Base (urlEncodeVars)
-import Network.HTTP.Client (parseRequest)
-import Requests (sendRequest)
+import Network.HTTP.Client (Manager, parseRequest)
 import qualified Telegram.Types as T
 import Text.Printf (printf)
 
-newtype TelegramAPI = TelegramAPI {apiToken :: String}
+api :: String -> Manager -> TelegramAPI
+api = TelegramAPI
+
+data TelegramAPI = TelegramAPI
+  { apiToken :: String,
+    apiManager :: Manager
+  }
+
+instance HasManager TelegramAPI where
+  getManager = apiManager
 
 instance API TelegramAPI where
   newRequestWithMethod TelegramAPI {apiToken = token} method params = do
@@ -17,4 +25,3 @@ instance API TelegramAPI where
     parseRequest url
 
 newtype TelegramLongPoll = TelegramLongPoll {lpLastUpdateID :: Integer}
-

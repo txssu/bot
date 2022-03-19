@@ -7,18 +7,20 @@ module Lib
   )
 where
 
+import API (API (sendAPIMethod))
 import Control.Monad.Reader (runReaderT)
-import Env (env)
-import Requests (envSendAPIMethdod)
-import Telegram.API (TelegramAPI (..))
-import VK.API (VKAPI (..))
+import Env (env, manager)
+import qualified Telegram.API as TG
+import qualified VK.API as VK
 
 startTG = do
-  e <- env (TelegramAPI "token")
-  r <- runReaderT (envSendAPIMethdod "getMe" []) e
+  m <- manager
+  let api = TG.api "token" m
+  r <- sendAPIMethod api "getMe" []
   print r
 
 startVK = do
-  e <- env (VKAPI "token" "5.131")
-  r <- runReaderT (envSendAPIMethdod "groups.getById" []) e
+  m <- manager
+  let api = VK.api "token" "5.131" m
+  r <- sendAPIMethod api "groups.getById" []
   print r
