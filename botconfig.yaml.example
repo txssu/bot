@@ -1,0 +1,8 @@
+telegram:
+  enable: false
+  token: myToken123
+
+vk:
+  enable: false
+  token: myToken321
+  version: "5.131"

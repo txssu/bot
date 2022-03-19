@@ -30,6 +30,8 @@ dependencies:
 - bytestring
 - aeson
 - vector
+- yaml
+- parallel
 
 library:
   source-dirs: src
