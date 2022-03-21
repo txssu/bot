@@ -23,5 +23,3 @@ instance API TelegramAPI where
   newRequestWithMethod TelegramAPI {apiToken = token} method params = do
     let url = printf "https://api.telegram.org/bot%s/%s?%s" token method (urlEncodeVars params)
     parseRequest url
-
-newtype TelegramLongPoll = TelegramLongPoll {lpLastUpdateID :: Integer}

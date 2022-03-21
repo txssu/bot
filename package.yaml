@@ -31,7 +31,7 @@ dependencies:
 - aeson
 - vector
 - yaml
-- parallel
+- async
 
 library:
   source-dirs: src

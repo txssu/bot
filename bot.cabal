@@ -29,9 +29,14 @@ library
       Config
       Env
       Lib
+      LongPoll
       Telegram.API
+      Telegram.LongPoll
+      Telegram.Parse
       Telegram.Types
       VK.API
+      VK.LongPoll
+      VK.Parse
       VK.Types
   other-modules:
       Paths_bot
@@ -40,6 +45,7 @@ library
   build-depends:
       HTTP
     , aeson
+    , async
     , base >=4.7 && <5
     , bytestring
     , exceptions
@@ -47,7 +53,6 @@ library
     , http-client-tls
     , http-types
     , mtl
-    , parallel
     , vector
     , yaml
   default-language: Haskell2010
@@ -62,6 +67,7 @@ executable bot-exe
   build-depends:
       HTTP
     , aeson
+    , async
     , base >=4.7 && <5
     , bot
     , bytestring
@@ -70,7 +76,6 @@ executable bot-exe
     , http-client-tls
     , http-types
     , mtl
-    , parallel
     , vector
     , yaml
   default-language: Haskell2010
@@ -86,6 +91,7 @@ test-suite bot-test
   build-depends:
       HTTP
     , aeson
+    , async
     , base >=4.7 && <5
     , bot
     , bytestring
@@ -94,7 +100,6 @@ test-suite bot-test
     , http-client-tls
     , http-types
     , mtl
-    , parallel
     , vector
     , yaml
   default-language: Haskell2010

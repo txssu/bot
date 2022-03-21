@@ -50,9 +50,19 @@ instance FromJSON Updates where
   parseJSON _ = empty
 
 data Update = Update
-  { uType :: String
+  { uType :: String,
+    uObject :: Object
   }
 
 instance FromJSON Update where
-  parseJSON (Object u) = Update <$> u .: "type"
+  parseJSON (Object u) = Update <$> u .: "type" <*> u .: "object"
+  parseJSON _ = empty
+
+data NewMessage = NewMessage
+  { nmPeerID :: Integer,
+    nmtext :: String
+  }
+
+instance FromJSON NewMessage where
+  parseJSON (Object nm) = NewMessage <$> nm .: "peer_id" <*> nm .: "text"
   parseJSON _ = empty

@@ -25,7 +25,7 @@ env :: (API api) => api -> Env api
 env api = Env api putStrLn
 
 data Env t = Env
-  { envAPI :: t,
+  { envAPI :: !t,
     envLog :: !(String -> IO ())
   }
 
