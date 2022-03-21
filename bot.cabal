@@ -29,6 +29,7 @@ library
       Config
       Env
       Lib
+      Log
       LongPoll
       Telegram.API
       Telegram.LongPoll

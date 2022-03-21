@@ -1,20 +1,51 @@
 module LongPoll where
 
-import API (API, HasManager (getManager))
+import API (API, HasAPI (getAPI), HasManager (getManager))
 import Control.Monad.Catch (Exception, MonadThrow)
-import Control.Monad.Reader (MonadIO)
+import Control.Monad.Reader (MonadIO, MonadReader (ask))
 import Data.ByteString.Lazy (ByteString)
+import Log (HasLog)
 import Network.HTTP.Client (Manager, Request)
 
-type LongPollHandler api m = (api -> ByteString -> m ())
-
 class LongPoll lp where
-  initLongPoll :: (MonadIO m, MonadThrow m, API api) => api -> m lp
-  awaitLongPoll :: (MonadIO m, MonadThrow m, API api, HasManager api) => lp -> api -> m (ByteString, lp)
+  initLongPoll ::
+    ( MonadReader (env api) m,
+      HasLog (env api),
+      HasAPI env,
+      MonadIO m,
+      MonadThrow m,
+      API api
+    ) =>
+    m lp
 
-  handleLongPoll :: (MonadIO m, MonadThrow m, API api, HasManager api) => lp -> api -> LongPollHandler api m -> m ()
-  handleLongPoll lp api handler = do
+  awaitLongPoll ::
+    ( MonadReader (env api) m,
+      HasLog (env api),
+      HasAPI env,
+      MonadIO m,
+      MonadThrow m,
+      API api,
+      HasManager api
+    ) =>
+    lp ->
+    m (ByteString, lp)
+
+  handleLongPoll ::
+    ( MonadReader (env api) m,
+      HasLog (env api),
+      HasAPI env,
+      MonadIO m,
+      MonadThrow m,
+      API api,
+      HasManager api
+    ) =>
+    lp ->
+    (ByteString -> m ()) ->
+    m ()
+  handleLongPoll lp handler = do
+    env <- ask
+    let api = getAPI env
     let manager = getManager api
-    (ups, newLP) <- awaitLongPoll lp api
-    handler api ups
-    handleLongPoll newLP api handler
+    (ups, newLP) <- awaitLongPoll lp
+    handler ups
+    handleLongPoll newLP handler

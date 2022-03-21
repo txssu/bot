@@ -1,7 +1,8 @@
 module Telegram.API (api) where
 
-import API (API, APIException, HasManager (getManager), newRequestWithMethod)
+import API (API, APIException, HasAPI (getAPI), HasManager (getManager), newRequestWithMethod)
 import Control.Monad.Catch (MonadThrow (throwM))
+import Control.Monad.Reader (ask)
 import qualified Data.Aeson as A
 import Network.HTTP.Base (urlEncodeVars)
 import Network.HTTP.Client (Manager, parseRequest)
@@ -20,6 +21,8 @@ instance HasManager TelegramAPI where
   getManager = apiManager
 
 instance API TelegramAPI where
-  newRequestWithMethod TelegramAPI {apiToken = token} method params = do
+  newRequestWithMethod method params = do
+    env <- ask
+    let TelegramAPI {apiToken = token} = getAPI env
     let url = printf "https://api.telegram.org/bot%s/%s?%s" token method (urlEncodeVars params)
     parseRequest url

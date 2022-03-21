@@ -1,19 +1,20 @@
 module Telegram.LongPoll where
 
-import API (APIException (APIException), newRequestWithMethod, sendRequest)
+import API (APIException (APIException), HasAPI (getAPI), newRequestWithMethod, sendRequest)
 import Control.Monad (when)
 import Control.Monad.Catch (MonadThrow (throwM))
+import Control.Monad.Reader (ask)
 import Data.Maybe (isNothing)
 import LongPoll (LongPoll (..))
 import Telegram.Parse (parseUpdates)
 import qualified Telegram.Types as TGTypes
 
-newtype TelegramLongPoll = TelegramLongPoll {lpLastUpdateID :: Integer} deriving Show
+newtype TelegramLongPoll = TelegramLongPoll {lpLastUpdateID :: Integer} deriving (Show)
 
 instance LongPoll TelegramLongPoll where
-  initLongPoll api = do
-    req <- newRequestWithMethod api "getUpdates" []
-    a <- sendRequest api req
+  initLongPoll = do
+    req <- newRequestWithMethod "getUpdates" []
+    a <- sendRequest req
     let udts = parseUpdates a
     when (isNothing udts) (throwM APIException)
     let Just updates = udts
@@ -23,9 +24,9 @@ instance LongPoll TelegramLongPoll where
 
     return $ TelegramLongPoll {lpLastUpdateID = newUpdateID}
 
-  awaitLongPoll lp@TelegramLongPoll {lpLastUpdateID = updateID} api = do
-    req <- newRequestWithMethod api "getUpdates" [("timeout", "25"), ("offset", show $ updateID + 1)]
-    a <- sendRequest api req
+  awaitLongPoll lp@TelegramLongPoll {lpLastUpdateID = updateID} = do
+    req <- newRequestWithMethod "getUpdates" [("timeout", "25"), ("offset", show $ updateID + 1)]
+    a <- sendRequest req
     let udts = parseUpdates a
     when (isNothing udts) (throwM APIException)
     let Just updates = udts

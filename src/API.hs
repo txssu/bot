@@ -1,21 +1,26 @@
 module API
   ( API (..),
+    HasAPI (getAPI),
     APIException (..),
-    HasManager (..)
+    HasManager (..),
   )
 where
 
 import Control.Monad.Catch (Exception, MonadThrow, throwM)
-import Control.Monad.Reader (MonadIO (liftIO))
+import Control.Monad.Reader (MonadIO (liftIO), MonadReader (ask))
 import Data.ByteString.Lazy (ByteString)
 import Data.Data (Typeable)
+import Log (HasLog, LogLevel (Debug), logMessage)
 import Network.HTTP.Client (Manager, Request, Response (responseBody, responseStatus), httpLbs)
 import Network.HTTP.Types.Status (Status (statusCode))
 
 class HasManager api => API api where
-  newRequestWithMethod :: (MonadThrow m) => api -> String -> [(String, String)] -> m Request
-  sendRequest :: (MonadIO m, MonadThrow m) => api -> Request -> m ByteString
-  sendRequest api req = do
+  newRequestWithMethod :: (MonadReader (env api) m, HasAPI env, MonadIO m, MonadThrow m) => String -> [(String, String)] -> m Request
+  sendRequest :: (MonadReader (env api) m, HasLog (env api), HasAPI env, MonadIO m, MonadThrow m) => Request -> m ByteString
+  sendRequest req = do
+    env <- ask
+    let api = getAPI env
+    logMessage Debug "Send request"
     let manager = getManager api
     res <- liftIO (httpLbs req manager)
     let status = responseStatus res
@@ -24,18 +29,23 @@ class HasManager api => API api where
         return $ responseBody res
       code -> do
         throwM APIException
+
   sendAPIMethod ::
-    ( MonadThrow m,
+    ( MonadReader (env api) m,
+      HasAPI env,
+      HasLog (env api),
+      MonadThrow m,
       MonadIO m
     ) =>
-    api ->
     String ->
     [(String, String)] ->
     m ByteString
-  sendAPIMethod api method params = do
+  sendAPIMethod method params = do
+    env <- ask
+    let api = getAPI env
     let manager = getManager api
-    req <- newRequestWithMethod api method params
-    sendRequest api req
+    req <- newRequestWithMethod method params
+    sendRequest req
 
 class HasManager e where
   getManager :: e -> Manager
@@ -44,3 +54,6 @@ data APIException = APIException
   deriving (Show, Typeable)
 
 instance Exception APIException
+
+class HasAPI e where
+  getAPI :: (API a) => e a -> a
