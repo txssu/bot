@@ -4,6 +4,7 @@ import API (API, HasAPI (getAPI), HasManager (getManager))
 import Control.Monad.Catch (Exception, MonadThrow)
 import Control.Monad.Reader (MonadIO, MonadReader (ask))
 import Data.ByteString.Lazy (ByteString)
+import GenericUpdate (GenericUpdate)
 import Log (HasLog)
 import Network.HTTP.Client (Manager, Request)
 
@@ -28,7 +29,7 @@ class LongPoll lp where
       HasManager api
     ) =>
     lp ->
-    m (ByteString, lp)
+    m ([GenericUpdate], lp)
 
   handleLongPoll ::
     ( MonadReader (env api) m,
@@ -40,12 +41,12 @@ class LongPoll lp where
       HasManager api
     ) =>
     lp ->
-    (ByteString -> m ()) ->
+    (GenericUpdate -> m ()) ->
     m ()
   handleLongPoll lp handler = do
     env <- ask
     let api = getAPI env
     let manager = getManager api
     (ups, newLP) <- awaitLongPoll lp
-    handler ups
+    mapM_ handler ups
     handleLongPoll newLP handler

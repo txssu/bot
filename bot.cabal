@@ -28,6 +28,7 @@ library
       API
       Config
       Env
+      GenericUpdate
       Lib
       Log
       LongPoll

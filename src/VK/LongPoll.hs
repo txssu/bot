@@ -5,10 +5,12 @@ import Control.Monad (when)
 import Control.Monad.Catch (MonadThrow (throwM))
 import Control.Monad.Cont (MonadIO (liftIO))
 import Control.Monad.Reader (ask)
+import qualified Data.Aeson as A
 import Data.Maybe (isNothing)
+import Log (LogLevel (Debug), logMessage)
 import LongPoll (LongPoll (..))
 import qualified Network.HTTP.Client as HClient
-import VK.Parse (parseResponse, parseUpdates)
+import VK.Parse (parseResponse, parseUpdates, toGenericUpdate)
 import VK.Types (Updates)
 import qualified VK.Types as VKTypes
 
@@ -41,4 +43,9 @@ instance LongPoll VKLongPoll where
     let newTS = VKTypes.usTS updates
     let newLP = lp {VKTypes.lpTS = newTS}
 
-    return (a, VKLongPoll newLP)
+    let us = mapM toGenericUpdate $ VKTypes.usUpdates updates
+    case us of
+      A.Error _ ->
+        throwM APIException
+      A.Success a ->
+        return (a, VKLongPoll newLP)

@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module VK.Types (Response (..), Group (..), LongPollServer (..), lpURL, Updates (..), Update (..)) where
+module VK.Types where
 
 import Control.Applicative (Alternative (empty))
 import Data.Aeson (FromJSON (parseJSON), Value (Object), (.:))
@@ -44,6 +44,7 @@ data Updates = Updates
   { usTS :: String,
     usUpdates :: [Update]
   }
+  deriving (Show)
 
 instance FromJSON Updates where
   parseJSON (Object us) = Updates <$> us .: "ts" <*> us .: "updates"
@@ -51,16 +52,25 @@ instance FromJSON Updates where
 
 data Update = Update
   { uType :: String,
-    uObject :: Object
+    uObject :: Value
   }
+  deriving (Show)
 
 instance FromJSON Update where
   parseJSON (Object u) = Update <$> u .: "type" <*> u .: "object"
   parseJSON _ = empty
 
+newtype NewMessageObject = NewMessageObject
+  { nmoMessage :: NewMessage
+  }
+
+instance FromJSON NewMessageObject where
+  parseJSON (Object u) = NewMessageObject <$> u .: "message"
+  parseJSON _ = empty
+
 data NewMessage = NewMessage
   { nmPeerID :: Integer,
-    nmtext :: String
+    nmText :: String
   }
 
 instance FromJSON NewMessage where
