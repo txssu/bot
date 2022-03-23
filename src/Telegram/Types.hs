@@ -3,7 +3,7 @@
 module Telegram.Types (Updates (..), Update (..), Message (..), User (..)) where
 
 import Control.Applicative (Alternative (empty))
-import Data.Aeson (FromJSON (parseJSON), Value (Object), (.:))
+import Data.Aeson (FromJSON (parseJSON), Value (Object), (.:), (.:?))
 
 data Updates = Updates
   { usOk :: Bool,
@@ -17,22 +17,22 @@ instance FromJSON Updates where
 
 data Update = Update
   { uID :: Integer,
-    uMessage :: Message
+    uMessage :: Maybe Message
   }
   deriving (Show)
 
 instance FromJSON Update where
-  parseJSON (Object update) = Update <$> update .: "update_id" <*> update .: "message"
+  parseJSON (Object update) = Update <$> update .: "update_id" <*> update .:? "message"
   parseJSON _ = empty
 
 data Message = Message
   { mFrom :: User,
-    mText :: String
+    mText :: Maybe String
   }
   deriving (Show)
 
 instance FromJSON Message where
-  parseJSON (Object message) = Message <$> message .: "from" <*> message .: "text"
+  parseJSON (Object message) = Message <$> message .: "from" <*> message .:? "text"
   parseJSON _ = empty
 
 data User = User

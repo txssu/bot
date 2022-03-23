@@ -5,11 +5,13 @@ module Lib
   )
 where
 
-import API (API (sendAPIMethod))
+import API (API (replyMessage, sendAPIMethod))
 import Config (Config (..), TelegramBot (..), VKBot (..), loadConfig)
 import Control.Concurrent.Async
 import Control.Monad.Reader (ReaderT (runReaderT))
 import Env (env, manager)
+import GenericUpdate (GenericUpdate (NewMessage, UndefinedUpdate, uText))
+import qualified GenericUpdate
 import Log (LogLevel (Info), logMessage)
 import LongPoll (LongPoll (handleLongPoll))
 import qualified LongPoll as LP
@@ -32,7 +34,7 @@ telegram TelegramBot {tgEnable = True, tgToken = token} = do
   let api = TG.api token m
   let e = env api
   lp :: TelegramLongPoll <- runReaderT LP.initLongPoll e
-  runReaderT (LP.handleLongPoll lp (\bs -> logMessage Info $ "New tg message: " ++ show bs)) e
+  runReaderT (LP.handleLongPoll lp handler) e
 
 vk VKBot {vkEnable = False} = return ()
 vk VKBot {vkEnable = True, vkToken = token, vkVersion = v} = do
@@ -40,4 +42,9 @@ vk VKBot {vkEnable = True, vkToken = token, vkVersion = v} = do
   let api = VK.api token v m
   let e = env api
   lp :: VKLongPoll <- runReaderT LP.initLongPoll e
-  runReaderT (LP.handleLongPoll lp (\bs -> logMessage Info $ "New vk message: " ++ show bs)) e
+  runReaderT (LP.handleLongPoll lp handler) e
+
+handler u@NewMessage {uText = text} = do
+  replyMessage u text
+  return ()
+handler UndefinedUpdate = return ()

@@ -7,7 +7,7 @@ import Control.Monad.Cont (MonadIO (liftIO))
 import Control.Monad.Reader (ask)
 import qualified Data.Aeson as A
 import Data.Maybe (isNothing)
-import Log (LogLevel (Debug), logMessage)
+import Log (LogLevel (Debug, Error), logMessage)
 import LongPoll (LongPoll (..))
 import qualified Network.HTTP.Client as HClient
 import VK.Parse (parseResponse, parseUpdates, toGenericUpdate)
@@ -18,6 +18,8 @@ newtype VKLongPoll = VKLongPoll {vkLP :: VKTypes.LongPollServer} deriving (Show)
 
 instance LongPoll VKLongPoll where
   initLongPoll = do
+    logMessage Debug "Init VK long poll"
+
     req <- newRequestWithMethod "groups.getById" []
     a <- sendRequest req
     let response = parseResponse a
@@ -45,7 +47,8 @@ instance LongPoll VKLongPoll where
 
     let us = mapM toGenericUpdate $ VKTypes.usUpdates updates
     case us of
-      A.Error _ ->
+      A.Error err -> do
+        logMessage Error err
         throwM APIException
       A.Success a ->
         return (a, VKLongPoll newLP)
