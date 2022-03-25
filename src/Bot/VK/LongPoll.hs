@@ -1,18 +1,17 @@
-module VK.LongPoll where
+module Bot.VK.LongPoll where
 
-import API (APIException (APIException), HasAPI (getAPI), newRequestWithMethod, sendRequest)
+import Bot.Base.API (APIException (APIException), HasAPI (getAPI), LongPoll (..), newRequestWithMethod, sendRequest)
+import Bot.Base.Log (LogLevel (Debug, Error), logMessage)
+import Bot.VK.Parse (parseResponse, parseUpdates, toGenericUpdate)
+import Bot.VK.Types (Updates)
+import qualified Bot.VK.Types as VKTypes
 import Control.Monad (when)
 import Control.Monad.Catch (MonadThrow (throwM))
 import Control.Monad.Cont (MonadIO (liftIO))
 import Control.Monad.Reader (ask)
 import qualified Data.Aeson as A
 import Data.Maybe (isNothing)
-import Log (LogLevel (Debug, Error), logMessage)
-import LongPoll (LongPoll (..))
 import qualified Network.HTTP.Client as HClient
-import VK.Parse (parseResponse, parseUpdates, toGenericUpdate)
-import VK.Types (Updates)
-import qualified VK.Types as VKTypes
 
 newtype VKLongPoll = VKLongPoll {vkLP :: VKTypes.LongPollServer} deriving (Show)
 

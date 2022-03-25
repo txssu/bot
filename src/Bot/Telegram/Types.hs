@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Telegram.Types (Updates (..), Update (..), Message (..), User (..)) where
+module Bot.Telegram.Types (Updates (..), Update (..), Message (..), User (..)) where
 
 import Control.Applicative (Alternative (empty))
 import Data.Aeson (FromJSON (parseJSON), Value (Object), (.:), (.:?))

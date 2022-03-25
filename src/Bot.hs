@@ -1,24 +1,22 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Lib
+module Bot
   ( start,
   )
 where
 
-import API (API (replyMessage, sendAPIMethod))
-import Config (Config (..), TelegramBot (..), VKBot (..), loadConfig)
+import Bot.Base.API (API (replyMessage, sendAPIMethod), LongPoll (handleLongPoll))
+import Bot.Base.Config (Config (..), TelegramBot (..), VKBot (..), loadConfig)
+import Bot.Base.Env (env, manager)
+import Bot.Base.Log (LogLevel (Info), logMessage)
+import Bot.Base.Types (GenericUpdate (NewMessage, UndefinedUpdate, uText))
 import Control.Concurrent.Async
 import Control.Monad.Reader (ReaderT (runReaderT))
-import Env (env, manager)
-import GenericUpdate (GenericUpdate (NewMessage, UndefinedUpdate, uText))
-import qualified GenericUpdate
-import Log (LogLevel (Info), logMessage)
-import LongPoll (LongPoll (handleLongPoll))
-import qualified LongPoll as LP
-import qualified Telegram.API as TG
-import Telegram.LongPoll (TelegramLongPoll (TelegramLongPoll))
-import qualified VK.API as VK
-import VK.LongPoll (VKLongPoll (VKLongPoll))
+import qualified Bot.Telegram.API as TG
+import Bot.Telegram.LongPoll (TelegramLongPoll (TelegramLongPoll))
+import qualified Bot.VK.API as VK
+import Bot.VK.LongPoll (VKLongPoll (VKLongPoll))
+import qualified Bot.Base.API as LP
 
 start = do
   config <- loadConfig

@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Config where
+module Bot.Base.Config where
 
 import Data.Yaml (FromJSON, decodeFileThrow, (.:))
 import qualified Data.Yaml as Y

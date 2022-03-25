@@ -1,10 +1,10 @@
-module Telegram.Parse where
+module Bot.Telegram.Parse where
 
+import Bot.Base.Types (GenericUpdate (UndefinedUpdate))
+import qualified Bot.Base.Types as GU
+import qualified Bot.Telegram.Types as T
 import qualified Data.Aeson as A
 import Data.ByteString.Lazy (ByteString)
-import GenericUpdate (GenericUpdate (UndefinedUpdate))
-import qualified GenericUpdate as GU
-import qualified Telegram.Types as T
 
 parseUpdates :: ByteString -> Either String T.Updates
 parseUpdates = A.eitherDecode

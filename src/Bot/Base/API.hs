@@ -1,19 +1,20 @@
 {-# LANGUAGE ConstraintKinds #-}
 
-module API
+module Bot.Base.API
   ( API (..),
     HasAPI (getAPI),
     APIException (..),
     HasManager (..),
+    LongPoll (..),
   )
 where
 
+import Bot.Base.Log (HasLog, LogLevel (Debug, Error), logMessage)
+import Bot.Base.Types (GenericUpdate (NewMessage))
 import Control.Monad.Catch (Exception, MonadThrow, throwM)
 import Control.Monad.Reader (MonadIO (liftIO), MonadReader (ask))
 import Data.ByteString.Lazy (ByteString)
 import Data.Data (Typeable)
-import GenericUpdate (GenericUpdate (NewMessage))
-import Log (HasLog, LogLevel (Debug, Error), logMessage)
 import Network.HTTP.Client (Manager, Request, Response (responseBody, responseStatus), httpLbs)
 import Network.HTTP.Types.Status (Status (statusCode))
 
@@ -67,3 +68,46 @@ instance Exception APIException
 
 class HasAPI e where
   getAPI :: (API a) => e a -> a
+
+class LongPoll lp where
+  initLongPoll ::
+    ( MonadReader (env api) m,
+      HasLog (env api),
+      HasAPI env,
+      MonadIO m,
+      MonadThrow m,
+      API api
+    ) =>
+    m lp
+
+  awaitLongPoll ::
+    ( MonadReader (env api) m,
+      HasLog (env api),
+      HasAPI env,
+      MonadIO m,
+      MonadThrow m,
+      API api,
+      HasManager api
+    ) =>
+    lp ->
+    m ([GenericUpdate], lp)
+
+  handleLongPoll ::
+    ( MonadReader (env api) m,
+      HasLog (env api),
+      HasAPI env,
+      MonadIO m,
+      MonadThrow m,
+      API api,
+      HasManager api
+    ) =>
+    lp ->
+    (GenericUpdate -> m ()) ->
+    m ()
+  handleLongPoll lp handler = do
+    env <- ask
+    let api = getAPI env
+    let manager = getManager api
+    (ups, newLP) <- awaitLongPoll lp
+    mapM_ handler ups
+    handleLongPoll newLP handler

@@ -1,4 +1,4 @@
-module GenericUpdate where
+module Bot.Base.Types where
 
 data GenericUpdate
   = NewMessage {uText :: String, uSender :: Integer}

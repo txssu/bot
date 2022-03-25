@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Env
+module Bot.Base.Env
   ( env,
     manager,
     Env (..),
@@ -10,10 +10,10 @@ module Env
   )
 where
 
-import API (HasAPI (getAPI))
+import Bot.Base.API (HasAPI (getAPI))
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.Reader (MonadIO, MonadReader (ask), ReaderT)
-import Log (HasLog (getLog), HasLogLevel (getLogLevel), LogLevel (Debug))
+import Bot.Base.Log (HasLog (getLog), HasLogLevel (getLogLevel), LogLevel (Debug), logger)
 import Network.HTTP.Client (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 
@@ -21,11 +21,11 @@ manager :: IO Manager
 manager = newManager tlsManagerSettings
 
 env :: api -> Env api
-env api = Env api putStrLn Debug
+env api = Env api (logger Debug putStrLn) Debug
 
 data Env t = Env
   { envAPI :: !t,
-    envLog :: !(String -> IO ()),
+    envLog :: !(LogLevel -> String -> IO ()),
     envLogLevel :: !LogLevel
   }
 

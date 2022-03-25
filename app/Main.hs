@@ -1,6 +1,6 @@
 module Main where
 
-import Lib (start)
+import Bot (start)
 
 main :: IO ()
 main = start

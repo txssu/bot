@@ -25,21 +25,21 @@ source-repository head
 
 library
   exposed-modules:
-      API
-      Config
-      Env
-      GenericUpdate
-      Lib
-      Log
-      LongPoll
-      Telegram.API
-      Telegram.LongPoll
-      Telegram.Parse
-      Telegram.Types
-      VK.API
-      VK.LongPoll
-      VK.Parse
-      VK.Types
+      Bot
+      Bot.Base.API
+      Bot.Base.Config
+      Bot.Base.Database
+      Bot.Base.Env
+      Bot.Base.Log
+      Bot.Base.Types
+      Bot.Telegram.API
+      Bot.Telegram.LongPoll
+      Bot.Telegram.Parse
+      Bot.Telegram.Types
+      Bot.VK.API
+      Bot.VK.LongPoll
+      Bot.VK.Parse
+      Bot.VK.Types
   other-modules:
       Paths_bot
   hs-source-dirs:

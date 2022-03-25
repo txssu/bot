@@ -1,14 +1,14 @@
-module Telegram.API (api) where
+module Bot.Telegram.API (api) where
 
-import API (API (replyMessage, sendAPIMethod), APIException, HasAPI (getAPI), HasManager (getManager), newRequestWithMethod)
+import Bot.Base.API (API (replyMessage, sendAPIMethod), APIException, HasAPI (getAPI), HasManager (getManager), newRequestWithMethod)
 import Control.Monad.Catch (MonadThrow (throwM))
 import Control.Monad.Reader (ask)
 import qualified Data.Aeson as A
-import qualified GenericUpdate as GU
-import Log (LogLevel (Info), logMessage)
+import qualified Bot.Base.Types as GU
+import Bot.Base.Log (LogLevel (Info), logMessage)
 import Network.HTTP.Base (urlEncodeVars)
 import Network.HTTP.Client (Manager, parseRequest)
-import qualified Telegram.Types as T
+import qualified Bot.Telegram.Types as T
 import Text.Printf (printf)
 
 api :: String -> Manager -> TelegramAPI

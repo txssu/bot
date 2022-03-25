@@ -1,9 +1,9 @@
-module VK.API where
+module Bot.VK.API where
 
-import API (API (replyMessage, sendAPIMethod), HasAPI (getAPI), HasManager (getManager), newRequestWithMethod)
+import Bot.Base.API (API (replyMessage, sendAPIMethod), HasAPI (getAPI), HasManager (getManager), newRequestWithMethod)
+import Bot.Base.Log (LogLevel (Info), logMessage)
+import qualified Bot.Base.Types as GU
 import Control.Monad.Reader (ask)
-import qualified GenericUpdate as GU
-import Log (LogLevel (Info), logMessage)
 import Network.HTTP.Base (urlEncodeVars)
 import Network.HTTP.Client (Manager, parseRequest)
 import Text.Printf (printf)

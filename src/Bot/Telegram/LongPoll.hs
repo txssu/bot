@@ -1,15 +1,14 @@
-module Telegram.LongPoll where
+module Bot.Telegram.LongPoll where
 
-import API (APIException (APIException), HasAPI (getAPI), newRequestWithMethod, sendRequest)
+import Bot.Base.API (APIException (APIException), HasAPI (getAPI), LongPoll (..), newRequestWithMethod, sendRequest)
+import Bot.Base.Log (LogLevel (Debug, Error), logMessage)
 import Control.Monad (when)
 import Control.Monad.Catch (MonadThrow (throwM))
 import Control.Monad.Reader (ask)
 import Data.Either (isLeft)
 import Data.Maybe (isNothing)
-import Log (LogLevel (Debug, Error), logMessage)
-import LongPoll (LongPoll (..))
-import Telegram.Parse (parseUpdates, toGenericUpdate)
-import qualified Telegram.Types as TGTypes
+import Bot.Telegram.Parse (parseUpdates, toGenericUpdate)
+import qualified Bot.Telegram.Types as TGTypes
 
 newtype TelegramLongPoll = TelegramLongPoll {lpLastUpdateID :: Integer} deriving (Show)
 

@@ -1,9 +1,9 @@
-module VK.Parse where
+module Bot.VK.Parse where
 
+import qualified Bot.Base.Types as GU
+import qualified Bot.VK.Types as T
 import qualified Data.Aeson as A
 import Data.ByteString.Lazy (ByteString)
-import qualified GenericUpdate as GU
-import qualified VK.Types as T
 
 parseResponse :: A.FromJSON a => ByteString -> Maybe a
 parseResponse bs = do
