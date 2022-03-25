@@ -32,6 +32,7 @@ library
       Bot.Base.Env
       Bot.Base.Log
       Bot.Base.Types
+      Bot.Handler
       Bot.Telegram.API
       Bot.Telegram.LongPoll
       Bot.Telegram.Parse
