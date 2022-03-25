@@ -9,8 +9,8 @@ import Bot.Base.API (API (replyMessage, sendAPIMethod), LongPoll (handleLongPoll
 import Bot.Base.Config (Config (..), TelegramBot (..), VKBot (..), loadConfig)
 import Bot.Base.Env (env, manager)
 import Bot.Base.Log (LogLevel (Info), logMessage)
-import Bot.Base.Types (GenericUpdate (NewMessage, UndefinedUpdate, uText))
-import Control.Concurrent.Async
+import Bot.Base.Types (Update (NewMessage, UndefinedUpdate, uText))
+import Control.Concurrent.Async ( concurrently )
 import Control.Monad.Reader (ReaderT (runReaderT))
 import qualified Bot.Telegram.API as TG
 import Bot.Telegram.LongPoll (TelegramLongPoll (TelegramLongPoll))

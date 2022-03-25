@@ -1,6 +1,6 @@
 module Bot.Base.Types where
 
-data GenericUpdate
+data Update
   = NewMessage {uText :: String, uSender :: Integer}
   | UndefinedUpdate
   deriving (Show)

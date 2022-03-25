@@ -10,7 +10,7 @@ module Bot.Base.API
 where
 
 import Bot.Base.Log (HasLog, LogLevel (Debug, Error), logMessage)
-import Bot.Base.Types (GenericUpdate (NewMessage))
+import qualified Bot.Base.Types as BaseT
 import Control.Monad.Catch (Exception, MonadThrow, throwM)
 import Control.Monad.Reader (MonadIO (liftIO), MonadReader (ask))
 import Data.ByteString.Lazy (ByteString)
@@ -54,7 +54,7 @@ class HasManager api => API api where
     ( IsAPI env api m,
       HasLog (env api)
     ) =>
-    GenericUpdate ->
+    BaseT.Update ->
     String ->
     m ByteString
 
@@ -90,7 +90,7 @@ class LongPoll lp where
       HasManager api
     ) =>
     lp ->
-    m ([GenericUpdate], lp)
+    m ([BaseT.Update], lp)
 
   handleLongPoll ::
     ( MonadReader (env api) m,
@@ -102,7 +102,7 @@ class LongPoll lp where
       HasManager api
     ) =>
     lp ->
-    (GenericUpdate -> m ()) ->
+    (BaseT.Update -> m ()) ->
     m ()
   handleLongPoll lp handler = do
     env <- ask

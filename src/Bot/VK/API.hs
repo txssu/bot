@@ -2,7 +2,7 @@ module Bot.VK.API where
 
 import Bot.Base.API (API (replyMessage, sendAPIMethod), HasAPI (getAPI), HasManager (getManager), newRequestWithMethod)
 import Bot.Base.Log (LogLevel (Info), logMessage)
-import qualified Bot.Base.Types as GU
+import qualified Bot.Base.Types as BaseT
 import Control.Monad.Reader (ask)
 import Network.HTTP.Base (urlEncodeVars)
 import Network.HTTP.Client (Manager, parseRequest)
@@ -29,6 +29,6 @@ instance API VKAPI where
     parseRequest url
 
   replyMessage update msg = do
-    let peerID = GU.uSender update
+    let peerID = BaseT.uSender update
     logMessage Info $ "VK: Reply for " ++ show peerID
     sendAPIMethod "messages.send" [("user_id", show peerID), ("message", msg), ("random_id", "0")]

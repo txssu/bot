@@ -2,18 +2,17 @@ module Bot.VK.LongPoll where
 
 import Bot.Base.API (APIException (APIException), HasAPI (getAPI), LongPoll (..), newRequestWithMethod, sendRequest)
 import Bot.Base.Log (LogLevel (Debug, Error), logMessage)
-import Bot.VK.Parse (parseResponse, parseUpdates, toGenericUpdate)
-import Bot.VK.Types (Updates)
-import qualified Bot.VK.Types as VKTypes
+import Bot.VK.Parse (parseResponse, parseUpdates, toBaseUpdate)
+import qualified Bot.VK.Types as T
 import Control.Monad (when)
 import Control.Monad.Catch (MonadThrow (throwM))
 import Control.Monad.Cont (MonadIO (liftIO))
 import Control.Monad.Reader (ask)
 import qualified Data.Aeson as A
 import Data.Maybe (isNothing)
-import qualified Network.HTTP.Client as HClient
+import Network.HTTP.Client (parseRequest)
 
-newtype VKLongPoll = VKLongPoll {vkLP :: VKTypes.LongPollServer} deriving (Show)
+newtype VKLongPoll = VKLongPoll {vkLP :: T.LongPollServer} deriving (Show)
 
 instance LongPoll VKLongPoll where
   initLongPoll = do
@@ -24,7 +23,7 @@ instance LongPoll VKLongPoll where
     let response = parseResponse a
     when (isNothing response) (throwM APIException)
     let Just groups = response
-    let myID = VKTypes.gID . head $ groups
+    let myID = T.gID . head $ groups
 
     req <- newRequestWithMethod "groups.getLongPollServer" [("group_id", show myID)]
     a <- sendRequest req
@@ -35,16 +34,16 @@ instance LongPoll VKLongPoll where
     return $ VKLongPoll lp
 
   awaitLongPoll VKLongPoll {vkLP = lp} = do
-    req <- HClient.parseRequest (VKTypes.lpURL lp)
+    req <- parseRequest (T.lpURL lp)
     a <- sendRequest req
     let response = parseUpdates a
     when (isNothing response) (throwM APIException)
     let Just updates = response
 
-    let newTS = VKTypes.usTS updates
-    let newLP = lp {VKTypes.lpTS = newTS}
+    let newTS = T.usTS updates
+    let newLP = lp {T.lpTS = newTS}
 
-    let us = mapM toGenericUpdate $ VKTypes.usUpdates updates
+    let us = mapM toBaseUpdate $ T.usUpdates updates
     case us of
       A.Error err -> do
         logMessage Error err

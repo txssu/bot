@@ -6,9 +6,8 @@ import Control.Monad (when)
 import Control.Monad.Catch (MonadThrow (throwM))
 import Control.Monad.Reader (ask)
 import Data.Either (isLeft)
-import Data.Maybe (isNothing)
-import Bot.Telegram.Parse (parseUpdates, toGenericUpdate)
-import qualified Bot.Telegram.Types as TGTypes
+import Bot.Telegram.Parse (parseUpdates, toBaseUpdate)
+import qualified Bot.Telegram.Types as T
 
 newtype TelegramLongPoll = TelegramLongPoll {lpLastUpdateID :: Integer} deriving (Show)
 
@@ -27,8 +26,8 @@ instance LongPoll TelegramLongPoll where
       )
     let Right updates = udts
 
-    let lst = TGTypes.usUpdates updates
-    let newUpdateID = if null lst then 0 else TGTypes.uID . last $ lst
+    let lst = T.usUpdates updates
+    let newUpdateID = if null lst then 0 else T.uID . last $ lst
 
     return $ TelegramLongPoll {lpLastUpdateID = newUpdateID}
 
@@ -45,7 +44,7 @@ instance LongPoll TelegramLongPoll where
       )
     let Right updates = udts
 
-    let lst = TGTypes.usUpdates updates
-    let newUpdateID = if null lst then 0 else TGTypes.uID . last $ lst
+    let lst = T.usUpdates updates
+    let newUpdateID = if null lst then 0 else T.uID . last $ lst
 
-    return (map toGenericUpdate lst, lp {lpLastUpdateID = newUpdateID})
+    return (map toBaseUpdate lst, lp {lpLastUpdateID = newUpdateID})
