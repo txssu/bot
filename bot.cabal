@@ -28,10 +28,12 @@ library
       Bot
       Bot.Base.API
       Bot.Base.Config
-      Bot.Base.Database
       Bot.Base.Env
       Bot.Base.Log
       Bot.Base.Types
+      Bot.Database.Actions
+      Bot.Database.Schema
+      Bot.Database.Types
       Bot.Handler
       Bot.Telegram.API
       Bot.Telegram.LongPoll
@@ -56,6 +58,8 @@ library
     , http-client-tls
     , http-types
     , mtl
+    , stm
+    , unordered-containers
     , vector
     , yaml
   default-language: Haskell2010
@@ -79,6 +83,8 @@ executable bot-exe
     , http-client-tls
     , http-types
     , mtl
+    , stm
+    , unordered-containers
     , vector
     , yaml
   default-language: Haskell2010
@@ -103,6 +109,8 @@ test-suite bot-test
     , http-client-tls
     , http-types
     , mtl
+    , stm
+    , unordered-containers
     , vector
     , yaml
   default-language: Haskell2010

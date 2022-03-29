@@ -32,6 +32,8 @@ dependencies:
 - vector
 - yaml
 - async
+- unordered-containers
+- stm
 
 library:
   source-dirs: src

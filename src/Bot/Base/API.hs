@@ -11,8 +11,9 @@ where
 
 import Bot.Base.Log (HasLog, LogLevel (Debug, Error), logMessage)
 import qualified Bot.Base.Types as BaseT
+import Bot.Database.Types (Database)
 import Control.Monad.Catch (Exception, MonadThrow, throwM)
-import Control.Monad.Reader (MonadIO (liftIO), MonadReader (ask))
+import Control.Monad.Reader (MonadIO (liftIO), MonadReader (ask), foldM)
 import Data.ByteString.Lazy (ByteString)
 import Data.Data (Typeable)
 import Network.HTTP.Client (Manager, Request, Response (responseBody, responseStatus), httpLbs)
@@ -102,12 +103,13 @@ class LongPoll lp where
       HasManager api
     ) =>
     lp ->
-    (BaseT.Update -> m ()) ->
+    Database ->
+    (Database -> BaseT.Update -> m Database) ->
     m ()
-  handleLongPoll lp handler = do
+  handleLongPoll lp db handler = do
     env <- ask
     let api = getAPI env
     let manager = getManager api
     (ups, newLP) <- awaitLongPoll lp
-    mapM_ handler ups
-    handleLongPoll newLP handler
+    newDB <- foldM handler db ups
+    handleLongPoll newLP newDB handler
