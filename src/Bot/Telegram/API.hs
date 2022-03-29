@@ -1,14 +1,11 @@
 module Bot.Telegram.API (api) where
 
-import Bot.Base.API (API (replyMessage, sendAPIMethod), APIException, HasAPI (getAPI), HasManager (getManager), newRequestWithMethod)
-import Control.Monad.Catch (MonadThrow (throwM))
-import Control.Monad.Reader (ask)
-import qualified Data.Aeson as A
-import qualified Bot.Base.Types as GU
+import Bot.Base.API (API (replyMessage, sendAPIMethod), HasAPI (getAPI), HasManager (getManager), newRequestWithMethod)
 import Bot.Base.Log (LogLevel (Info), logMessage)
+import qualified Bot.Base.Types as BaseT
+import Control.Monad.Reader (ask)
 import Network.HTTP.Base (urlEncodeVars)
 import Network.HTTP.Client (Manager, parseRequest)
-import qualified Bot.Telegram.Types as T
 import Text.Printf (printf)
 
 api :: String -> Manager -> TelegramAPI
@@ -30,6 +27,6 @@ instance API TelegramAPI where
     parseRequest url
 
   replyMessage update msg = do
-    let peerID = GU.uSender update
+    let peerID = BaseT.uSender update
     logMessage Info $ "Telegram: Reply for " ++ show peerID
     sendAPIMethod "sendMessage" [("chat_id", show peerID), ("text", msg)]

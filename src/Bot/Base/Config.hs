@@ -4,7 +4,6 @@ module Bot.Base.Config where
 
 import Data.Yaml (FromJSON, decodeFileThrow, (.:))
 import qualified Data.Yaml as Y
-import GHC.Generics (Generic)
 
 data Config = Config
   { configTelegram :: TelegramBot,

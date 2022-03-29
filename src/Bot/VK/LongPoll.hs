@@ -1,13 +1,11 @@
 module Bot.VK.LongPoll where
 
-import Bot.Base.API (APIException (APIException), HasAPI (getAPI), LongPoll (..), newRequestWithMethod, sendRequest)
+import Bot.Base.API (APIException (APIException), LongPoll (awaitLongPoll, initLongPoll), newRequestWithMethod, sendRequest)
 import Bot.Base.Log (LogLevel (Debug, Error), logMessage)
 import Bot.VK.Parse (parseResponse, parseUpdates, toBaseUpdate)
 import qualified Bot.VK.Types as T
 import Control.Monad (when)
 import Control.Monad.Catch (MonadThrow (throwM))
-import Control.Monad.Cont (MonadIO (liftIO))
-import Control.Monad.Reader (ask)
 import qualified Data.Aeson as A
 import Data.Maybe (isNothing)
 import Network.HTTP.Client (parseRequest)
@@ -25,11 +23,11 @@ instance LongPoll VKLongPoll where
     let Just groups = response
     let myID = T.gID . head $ groups
 
-    req <- newRequestWithMethod "groups.getLongPollServer" [("group_id", show myID)]
-    a <- sendRequest req
-    let response = parseResponse a
-    when (isNothing response) (throwM APIException)
-    let Just lp = response
+    reqLP <- newRequestWithMethod "groups.getLongPollServer" [("group_id", show myID)]
+    aLP <- sendRequest reqLP
+    let responseLP = parseResponse aLP
+    when (isNothing responseLP) (throwM APIException)
+    let Just lp = responseLP
 
     return $ VKLongPoll lp
 
@@ -48,5 +46,5 @@ instance LongPoll VKLongPoll where
       A.Error err -> do
         logMessage Error err
         throwM APIException
-      A.Success a ->
-        return (a, VKLongPoll newLP)
+      A.Success ok ->
+        return (ok, VKLongPoll newLP)

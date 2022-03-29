@@ -5,7 +5,6 @@ module Bot.VK.Types where
 
 import Control.Applicative (Alternative (empty))
 import Data.Aeson (FromJSON (parseJSON), Value (Object), (.:))
-import Data.Aeson.Types (Object)
 import Text.Printf (printf)
 
 data Response a = Response

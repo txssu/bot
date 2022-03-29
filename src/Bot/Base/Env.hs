@@ -12,8 +12,6 @@ where
 
 import Bot.Base.API (HasAPI (getAPI))
 import Bot.Base.Log (HasLog (getLog), HasLogLevel (getLogLevel), LogLevel (Debug), logger)
-import Control.Monad.Catch (MonadThrow)
-import Control.Monad.Reader (MonadIO, MonadReader (ask), ReaderT)
 import Network.HTTP.Client (Manager, newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 

@@ -9,7 +9,7 @@ module Bot.Base.API
   )
 where
 
-import Bot.Base.Log (HasLog, LogLevel (Debug, Error), logMessage)
+import Bot.Base.Log (HasLog, LogLevel (Error), logMessage)
 import qualified Bot.Base.Types as BaseT
 import Bot.Database.Types (Database)
 import Control.Monad.Catch (Exception, MonadThrow, throwM)
@@ -33,7 +33,7 @@ class HasManager api => API api where
     case statusCode status of
       200 -> do
         return $ responseBody res
-      code -> do
+      _ -> do
         logMessage Error $ "Error status code: " ++ show res
         throwM APIException
 
@@ -45,9 +45,6 @@ class HasManager api => API api where
     [(String, String)] ->
     m ByteString
   sendAPIMethod method params = do
-    env <- ask
-    let api = getAPI env
-    let manager = getManager api
     req <- newRequestWithMethod method params
     sendRequest req
 
@@ -107,9 +104,6 @@ class LongPoll lp where
     (Database -> BaseT.Update -> m Database) ->
     m ()
   handleLongPoll lp db handler = do
-    env <- ask
-    let api = getAPI env
-    let manager = getManager api
     (ups, newLP) <- awaitLongPoll lp
     newDB <- foldM handler db ups
     handleLongPoll newLP newDB handler

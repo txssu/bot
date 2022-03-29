@@ -3,7 +3,6 @@
 module Bot.Handler where
 
 import qualified Bot.Base.API as API
-import Bot.Base.Log (LogLevel (Debug), logMessage)
 import qualified Bot.Base.Log as Log
 import qualified Bot.Base.Types as T
 import qualified Bot.Database.Actions as DB
@@ -12,7 +11,6 @@ import Bot.Database.Types (Database)
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.Reader (MonadIO, MonadReader)
 import Data.List (intercalate)
-import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
 
 type IsHandler env api m =
@@ -52,10 +50,10 @@ handleSettings :: IsHandler env api m => Handler m
 handleSettings db u@T.NewMessage {T.uText = text, T.uSender = sender} = do
   let n = readMaybe text :: Maybe Int
   case n of
-    Just repeat -> do
-      _ <- API.replyMessage u $ "Repeat count now is " ++ show repeat
+    Just repeatCount -> do
+      _ <- API.replyMessage u $ "Repeat count now is " ++ show repeatCount
       let updatedDB = DB.setStatus db sender Global
-      return $ DB.setRepeatCount updatedDB sender repeat
+      return $ DB.setRepeatCount updatedDB sender repeatCount
     Nothing -> do
       _ <- API.replyMessage u "Must be a number"
       return db
