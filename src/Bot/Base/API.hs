@@ -6,6 +6,7 @@ module Bot.Base.API
     APIException (..),
     HasManager (..),
     LongPoll (..),
+    IsAPI(..)
   )
 where
 

@@ -1,9 +1,13 @@
 module Bot.VK.API where
 
-import Bot.Base.API (API (replyMessage, sendAPIMethod), HasAPI (getAPI), HasManager (getManager), newRequestWithMethod)
-import Bot.Base.Log (LogLevel (Info), logMessage)
+import Bot.Base.API (API (replyMessage, sendAPIMethod), APIException (APIException), HasAPI (getAPI), HasManager (getManager), IsAPI, newRequestWithMethod)
+import Bot.Base.Log (HasLog, LogLevel (Info), logMessage)
 import qualified Bot.Base.Types as BaseT
-import Control.Monad.Reader (ask)
+import Bot.VK.Parse (parseResponse)
+import qualified Bot.VK.Types as T
+import Control.Monad.Catch (throwM)
+import Control.Monad.Reader (ask, when)
+import Data.Maybe (isNothing)
 import Network.HTTP.Base (urlEncodeVars)
 import Network.HTTP.Client (Manager, parseRequest)
 import Text.Printf (printf)
@@ -16,6 +20,14 @@ data VKAPI = VKAPI
     apiVersion :: String,
     apiManager :: Manager
   }
+
+getMyID :: (IsAPI env api m, API api, HasLog (env api)) => m Integer
+getMyID = do
+  res <- sendAPIMethod "groups.getById" []
+  let response = parseResponse res
+  when (isNothing response) (throwM APIException)
+  let Just groups = response
+  return $ T.gID . head $ groups
 
 instance HasManager VKAPI where
   getManager = apiManager

@@ -2,6 +2,7 @@ module Bot.VK.LongPoll where
 
 import Bot.Base.API (APIException (APIException), LongPoll (awaitLongPoll, initLongPoll), newRequestWithMethod, sendRequest)
 import Bot.Base.Log (LogLevel (Debug, Error), logMessage)
+import Bot.VK.API (getMyID)
 import Bot.VK.Parse (parseResponse, parseUpdates, toBaseUpdate)
 import qualified Bot.VK.Types as T
 import Control.Monad (when)
@@ -16,12 +17,7 @@ instance LongPoll VKLongPoll where
   initLongPoll = do
     logMessage Debug "Init VK long poll"
 
-    req <- newRequestWithMethod "groups.getById" []
-    a <- sendRequest req
-    let response = parseResponse a
-    when (isNothing response) (throwM APIException)
-    let Just groups = response
-    let myID = T.gID . head $ groups
+    myID <- getMyID
 
     reqLP <- newRequestWithMethod "groups.getLongPollServer" [("group_id", show myID)]
     aLP <- sendRequest reqLP

@@ -3,7 +3,7 @@ module Bot.Base.Log
     LogLevel (..),
     HasLog (getLog),
     HasLogLevel (getLogLevel),
-    logger
+    logger,
   )
 where
 
