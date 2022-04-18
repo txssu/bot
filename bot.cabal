@@ -29,6 +29,7 @@ library
       Bot.Base.API
       Bot.Base.Config
       Bot.Base.Env
+      Bot.Base.Error
       Bot.Base.Log
       Bot.Base.Types
       Bot.Database.Actions

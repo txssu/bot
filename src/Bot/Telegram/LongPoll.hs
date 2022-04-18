@@ -1,6 +1,7 @@
 module Bot.Telegram.LongPoll where
 
-import Bot.Base.API (APIException (APIException), LongPoll (awaitLongPoll, initLongPoll), newRequestWithMethod, sendRequest)
+import Bot.Base.API (API (sendAPIMethod), LongPoll (awaitLongPoll, initLongPoll))
+import Bot.Base.Error (APIException (ParseError))
 import Bot.Base.Log (LogLevel (Debug, Error), logMessage)
 import Bot.Telegram.Parse (parseUpdates, toBaseUpdate)
 import qualified Bot.Telegram.Types as T
@@ -13,15 +14,14 @@ newtype TelegramLongPoll = TelegramLongPoll {lpLastUpdateID :: Integer} deriving
 instance LongPoll TelegramLongPoll where
   initLongPoll = do
     logMessage Debug "Init Telegram long poll"
-    req <- newRequestWithMethod "getUpdates" []
-    a <- sendRequest req
-    let udts = parseUpdates a
+    response <- sendAPIMethod "getUpdates" []
+    let udts = parseUpdates response
     when
       (isLeft udts)
       ( do
           let Left err = udts
           logMessage Error $ "Error when trying init telegram long poll: " ++ err
-          throwM APIException
+          throwM $ ParseError err
       )
     let Right updates = udts
 
@@ -31,15 +31,14 @@ instance LongPoll TelegramLongPoll where
     return $ TelegramLongPoll {lpLastUpdateID = newUpdateID}
 
   awaitLongPoll lp@TelegramLongPoll {lpLastUpdateID = updateID} = do
-    req <- newRequestWithMethod "getUpdates" [("timeout", "25"), ("offset", show $ updateID + 1)]
-    a <- sendRequest req
-    let udts = parseUpdates a
+    response <- sendAPIMethod "getUpdates" [("timeout", "25"), ("offset", show $ updateID + 1)]
+    let udts = parseUpdates response
     when
       (isLeft udts)
       ( do
           let Left err = udts
           logMessage Error $ "Error when await telegram long poll: " ++ err
-          throwM APIException
+          throwM $ ParseError err
       )
     let Right updates = udts
 

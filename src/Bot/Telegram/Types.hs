@@ -1,9 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bot.Telegram.Types (Updates (..), Update (..), Message (..), User (..)) where
+module Bot.Telegram.Types (Updates (..), Update (..), Message (..), User (..), Error(..)) where
 
 import Control.Applicative (Alternative (empty))
 import Data.Aeson (FromJSON (parseJSON), Value (Object), (.:), (.:?))
+import Text.Printf (printf)
 
 data Updates = Updates
   { usOk :: Bool,
@@ -42,4 +43,16 @@ data User = User
 
 instance FromJSON User where
   parseJSON (Object user) = User <$> user .: "id"
+  parseJSON _ = empty
+
+data Error = Error
+  { errorCode :: Integer,
+    errorDescription :: String
+  }
+
+instance Show Error where
+  show (Error code description) = printf "Response code %d: %s" code description
+
+instance FromJSON Error where
+  parseJSON (Object e) = Error <$> e .: "error_code" <*> e .: "description"
   parseJSON _ = empty

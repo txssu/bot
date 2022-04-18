@@ -8,7 +8,7 @@ import qualified Bot.Base.Types as T
 import qualified Bot.Database.Actions as DB
 import Bot.Database.Schema (UserStatus (Global, Settings))
 import Bot.Database.Types (Database)
-import Control.Monad.Catch (MonadThrow)
+import Control.Monad.Catch (MonadCatch)
 import Control.Monad.Reader (MonadIO, MonadReader)
 import Data.List (intercalate)
 import Text.Read (readMaybe)
@@ -19,17 +19,21 @@ type IsHandler env api m =
     MonadIO m,
     Log.HasLog (env api),
     API.HasAPI env,
-    MonadThrow m
+    MonadCatch m
   )
 
 type Handler m = Database -> T.Update -> m Database
+
+headDefault :: a -> [a] -> a
+headDefault d [] = d
+headDefault _ (x : _) = x
 
 handler :: IsHandler env api m => Handler m
 handler db u@T.NewMessage {T.uText = text, T.uSender = sender} = do
   let status = DB.getStatus db sender
   case status of
     Global -> do
-      let command : _ = words text
+      let command = headDefault "" $ words text
       let com = lookup command handlersList
       maybe (handleRepeat db u) (\x -> x db u) com
     Settings -> handleSettings db u
